@@ -2,7 +2,8 @@ import { Store, CrudOptions, StoreOptions, UpdateResults } from '../createStore'
 import { ComposeMixinDescriptor } from 'dojo-compose/compose';
 import WeakMap from 'dojo-shim/WeakMap';
 import Promise from 'dojo-shim/Promise';
-import { Observer, Observable } from 'rxjs/Rx';
+import { Observable } from 'rxjs/Observable';
+import { Observer } from 'rxjs/Observer';
 import createStoreObservable from '../createStoreObservable';
 
 interface OrderedOperationState {
