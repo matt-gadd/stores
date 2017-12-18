@@ -1,6 +1,7 @@
 import { Evented } from '@dojo/core/Evented';
 import { Patch, PatchOperation } from './state/Patch';
 import { Pointer } from './state/Pointer';
+import Map from '@dojo/shim/Map';
 
 /**
  * The "path" to a value of type T on and object of type M. The path string is a JSON Pointer to the location of
@@ -62,6 +63,16 @@ export interface State<M> {
 	at<S extends Path<M, Array<any>>>(path: S, index: number): Path<M, S['value'][0]>;
 }
 
+interface OnChangeCallback {
+	callbackId: number;
+	callback: Function;
+}
+
+interface OnChangeValue {
+	callbacks: OnChangeCallback[];
+	previousValue: any;
+}
+
 function isString(segment?: string): segment is string {
 	return typeof segment === 'string';
 }
@@ -75,6 +86,10 @@ export class Store<T = any> extends Evented implements State<T> {
 	 * The private state object
 	 */
 	private _state = {} as T;
+
+	private _changePaths = new Map<string, OnChangeValue>();
+
+	private _callbackId = 0;
 
 	/**
 	 * Returns the state at a specific pointer path location.
@@ -107,10 +122,48 @@ export class Store<T = any> extends Evented implements State<T> {
 		};
 	}
 
+	private _addOnChangePath = <U = any>(path: Path<T, U>, callback: Function, callbackId: number): void => {
+		let changePaths = this._changePaths.get(path.path);
+		if (!changePaths) {
+			changePaths = { callbacks: [], previousValue: this.get(path) };
+		}
+		changePaths.callbacks.push({ callbackId, callback });
+		this._changePaths.set(path.path, changePaths);
+	}
+
+	public onChange = <U = any>(paths: Path<T, U> | Path<T, U>[], callback: Function): void => {
+		if (Array.isArray(paths)) {
+			paths.forEach((path) => this._addOnChangePath(path, callback, this._callbackId));
+		}
+		else {
+			this._addOnChangePath(paths, callback, this._callbackId);
+		}
+		this._callbackId += 1;
+	}
+
+	private _runOnChanges() {
+		const callbackIdsCalled: number[] = [];
+		this._changePaths.forEach((value: OnChangeValue, path: string) => {
+			const { previousValue, callbacks } = value;
+			const newValue = new Pointer(path).get(this._state);
+			if (previousValue !== newValue) {
+				this._changePaths.set(path, { callbacks, previousValue: newValue });
+				callbacks.forEach((callbackItem: OnChangeCallback) => {
+					const { callback, callbackId } = callbackItem;
+					if (callbackIdsCalled.indexOf(callbackId) === -1) {
+						callback(previousValue, newValue);
+						callbackIdsCalled.push(callbackId);
+					}
+				});
+			}
+		});
+	}
+
 	/**
 	 * Emits an invalidation event
 	 */
 	public invalidate(): any {
+		this._runOnChanges();
 		this.emit({ type: 'invalidate' });
 	}
 
