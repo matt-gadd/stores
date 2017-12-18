@@ -36,7 +36,7 @@ describe('store',  () => {
 
 		const { onChange, path, apply } = store;
 
-		onChange(store.path('foo', 'bar'), () => first += 1);
+		onChange(path('foo', 'bar'), () => first += 1);
 
 		onChange([
 			path('foo', 'bar'),
@@ -44,15 +44,16 @@ describe('store',  () => {
 		], () => second += 1);
 
 		apply([
-			{ op: OperationType.ADD, path: new Pointer('/foo/bar'), value: 'test'},
-			{ op: OperationType.ADD, path: new Pointer('/baz'), value: 'hello'}
+			{ op: OperationType.ADD, path: new Pointer('/foo/bar'), value: 'test' },
+			{ op: OperationType.ADD, path: new Pointer('/baz'), value: 'hello' }
 		], true);
 
 		assert.strictEqual(first, 1);
 		assert.strictEqual(second, 1);
 
 		apply([
-			{ op: OperationType.ADD, path: new Pointer('/baz'), value: 'world'}
+			{ op: OperationType.ADD, path: new Pointer('/foo/bar'), value: 'test' },
+			{ op: OperationType.ADD, path: new Pointer('/baz'), value: 'world' }
 		], true);
 
 		assert.strictEqual(first, 1);

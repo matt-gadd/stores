@@ -65,7 +65,7 @@ export interface State<M> {
 
 interface OnChangeCallback {
 	callbackId: number;
-	callback: Function;
+	callback: () => void;
 }
 
 interface OnChangeValue {
@@ -122,23 +122,23 @@ export class Store<T = any> extends Evented implements State<T> {
 		};
 	}
 
-	private _addOnChangePath = <U = any>(path: Path<T, U>, callback: Function, callbackId: number): void => {
+	public onChange = <U = any>(paths: Path<T, U> | Path<T, U>[], callback: () => void): void => {
+		if (Array.isArray(paths)) {
+			paths.forEach((path) => this._addOnChange(path, callback, this._callbackId));
+		}
+		else {
+			this._addOnChange(paths, callback, this._callbackId);
+		}
+		this._callbackId += 1;
+	}
+
+	private _addOnChange = <U = any>(path: Path<T, U>, callback: () => void, callbackId: number): void => {
 		let changePaths = this._changePaths.get(path.path);
 		if (!changePaths) {
 			changePaths = { callbacks: [], previousValue: this.get(path) };
 		}
 		changePaths.callbacks.push({ callbackId, callback });
 		this._changePaths.set(path.path, changePaths);
-	}
-
-	public onChange = <U = any>(paths: Path<T, U> | Path<T, U>[], callback: Function): void => {
-		if (Array.isArray(paths)) {
-			paths.forEach((path) => this._addOnChangePath(path, callback, this._callbackId));
-		}
-		else {
-			this._addOnChangePath(paths, callback, this._callbackId);
-		}
-		this._callbackId += 1;
 	}
 
 	private _runOnChanges() {
@@ -148,11 +148,11 @@ export class Store<T = any> extends Evented implements State<T> {
 			const newValue = new Pointer(path).get(this._state);
 			if (previousValue !== newValue) {
 				this._changePaths.set(path, { callbacks, previousValue: newValue });
-				callbacks.forEach((callbackItem: OnChangeCallback) => {
+				callbacks.forEach((callbackItem) => {
 					const { callback, callbackId } = callbackItem;
 					if (callbackIdsCalled.indexOf(callbackId) === -1) {
-						callback(previousValue, newValue);
 						callbackIdsCalled.push(callbackId);
+						callback();
 					}
 				});
 			}
