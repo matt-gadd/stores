@@ -122,14 +122,25 @@ export class Store<T = any> extends Evented implements State<T> {
 		};
 	}
 
-	public onChange = <U = any>(paths: Path<T, U> | Path<T, U>[], callback: () => void): void => {
-		if (Array.isArray(paths)) {
-			paths.forEach((path) => this._addOnChange(path, callback, this._callbackId));
+	public onChange = <U = any>(paths: Path<T, U> | Path<T, U>[], callback: () => void) => {
+		const callbackId = this._callbackId;
+		if (!Array.isArray(paths)) {
+			paths = [ paths ];
 		}
-		else {
-			this._addOnChange(paths, callback, this._callbackId);
-		}
+		paths.forEach((path) => this._addOnChange(path, callback, callbackId));
 		this._callbackId += 1;
+		return {
+			remove: () => {
+				(paths as Path<T, U>[]).forEach((path) => {
+					const onChange = this._changePaths.get(path.path);
+					if (onChange) {
+						onChange.callbacks = onChange.callbacks.filter((callback) => {
+							return callback.callbackId !== callbackId;
+						});
+					}
+				});
+			}
+		};
 	}
 
 	private _addOnChange = <U = any>(path: Path<T, U>, callback: () => void, callbackId: number): void => {

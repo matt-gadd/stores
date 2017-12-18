@@ -60,6 +60,38 @@ describe('store',  () => {
 		assert.strictEqual(second, 2);
 	});
 
+	it('can remove a registered onChange', () => {
+		let first = 0;
+		let second = 0;
+
+		const { onChange, path, apply } = store;
+
+		const { remove } = onChange(path('foo', 'bar'), () => first += 1);
+
+		onChange([
+			path('foo', 'bar'),
+			path('baz')
+		], () => second += 1);
+
+		apply([
+			{ op: OperationType.ADD, path: new Pointer('/foo/bar'), value: 'test' },
+			{ op: OperationType.ADD, path: new Pointer('/baz'), value: 'hello' }
+		], true);
+
+		assert.strictEqual(first, 1);
+		assert.strictEqual(second, 1);
+
+		remove();
+
+		apply([
+			{ op: OperationType.ADD, path: new Pointer('/foo/bar'), value: 'test2' },
+			{ op: OperationType.ADD, path: new Pointer('/baz'), value: 'hello2' }
+		], true);
+
+		assert.strictEqual(first, 1);
+		assert.strictEqual(second, 2);
+	});
+
 	it('invalidate', () => {
 		let invalidateEmitted = false;
 		store.on('invalidate', () => {
