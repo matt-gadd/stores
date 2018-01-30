@@ -134,6 +134,77 @@ const ids: any = {};
 export function getProcess(id: string) {
 	return ids[id];
 }
+
+export function processExecutor<T = any, P extends object = DefaultPayload>(
+	id: string,
+	commands: Commands<T, P>,
+	store: Store<T>,
+	callback: ProcessCallback | undefined,
+	transformer: Transformer<P> | undefined
+): ProcessExecutor<T, any, any> {
+	const { apply, get, path, at } = store;
+	function executor(
+		process: Process,
+		payload: any,
+		transformer?: Transformer
+	): Promise<ProcessResult | ProcessError> {
+		return process(store)(payload);
+	}
+
+	return async (executorPayload: P): Promise<ProcessResult<T, P>> => {
+		const undoOperations: PatchOperation[] = [];
+		const operations: PatchOperation[] = [];
+		const commandsCopy = [...commands];
+		const undo = () => {
+			store.apply(undoOperations, true);
+		};
+
+		let command = commandsCopy.shift();
+		let error: ProcessError | null = null;
+		const payload = transformer ? transformer(executorPayload) : executorPayload;
+		try {
+			while (command) {
+				let results = [];
+				if (Array.isArray(command)) {
+					results = command.map((commandFunction) => commandFunction({ at, get, path, payload }));
+					results = await Promise.all(results);
+				} else {
+					let result = command({ at, get, path, payload });
+					if (isThenable(result)) {
+						result = await result;
+					}
+					results = [result];
+				}
+
+				for (let i = 0; i < results.length; i++) {
+					operations.push(...results[i]);
+					undoOperations.push(...apply(results[i]));
+				}
+
+				store.invalidate();
+				command = commandsCopy.shift();
+			}
+		} catch (e) {
+			error = { error: e, command };
+		}
+
+		callback &&
+			callback(error, { store, processId: id, operations, undo, apply, at, get, path, executor, payload });
+		return Promise.resolve({
+			store,
+			processId: id,
+			error,
+			operations,
+			undo,
+			apply,
+			at,
+			get,
+			path,
+			executor,
+			payload
+		});
+	};
+}
 /**
  * Factories a process using the provided commands and an optional callback. Returns an executor used to run the process.
  *
@@ -148,71 +219,8 @@ export function createProcess<T = any, P extends object = DefaultPayload>(
 	if (id) {
 		ids[id] = [commands, { id, callback }];
 	}
-	function processExecutor(store: Store<T>, transformer?: Transformer<P>): ProcessExecutor<T, any, any> {
-		const { apply, get, path, at } = store;
-		function executor(
-			process: Process,
-			payload: any,
-			transformer?: Transformer
-		): Promise<ProcessResult | ProcessError> {
-			return process(store)(payload);
-		}
-
-		return async (executorPayload: P): Promise<ProcessResult<T, P>> => {
-			const undoOperations: PatchOperation[] = [];
-			const operations: PatchOperation[] = [];
-			const commandsCopy = [...commands];
-			const undo = () => {
-				store.apply(undoOperations, true);
-			};
-
-			let command = commandsCopy.shift();
-			let error: ProcessError | null = null;
-			const payload = transformer ? transformer(executorPayload) : executorPayload;
-			try {
-				while (command) {
-					let results = [];
-					if (Array.isArray(command)) {
-						results = command.map((commandFunction) => commandFunction({ at, get, path, payload }));
-						results = await Promise.all(results);
-					} else {
-						let result = command({ at, get, path, payload });
-						if (isThenable(result)) {
-							result = await result;
-						}
-						results = [result];
-					}
-
-					for (let i = 0; i < results.length; i++) {
-						operations.push(...results[i]);
-						undoOperations.push(...apply(results[i]));
-					}
-
-					store.invalidate();
-					command = commandsCopy.shift();
-				}
-			} catch (e) {
-				error = { error: e, command };
-			}
-
-			callback &&
-				callback(error, { store, processId: id, operations, undo, apply, at, get, path, executor, payload });
-			return Promise.resolve({
-				store,
-				processId: id,
-				error,
-				operations,
-				undo,
-				apply,
-				at,
-				get,
-				path,
-				executor,
-				payload
-			});
-		};
-	}
-	return processExecutor;
+	return (store: Store<T>, transformer?: Transformer<P>) =>
+		processExecutor(id, commands, store, callback, transformer);
 }
 
 /**
