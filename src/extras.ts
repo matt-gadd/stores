@@ -1,5 +1,5 @@
 import {
-	createProcess,
+	processExecutor,
 	getProcess,
 	ProcessError,
 	ProcessResult,
@@ -85,7 +85,7 @@ export function createHistoryManager(): HistoryManager {
 						callback = options.callback;
 					}
 				}
-				return createProcess(processId, [() => operations], callback)(store)({});
+				processExecutor(processId, [() => operations], store, callback, undefined)({});
 			});
 		},
 		serialize(store) {
