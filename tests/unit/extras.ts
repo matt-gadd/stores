@@ -2,7 +2,7 @@ const { describe, it } = intern.getInterface('bdd');
 const { assert } = intern.getPlugin('chai');
 
 import { OperationType, PatchOperation } from './../../src/state/Patch';
-import { CommandRequest, createProcess, ProcessError, ProcessResult } from './../../src/process';
+import { CommandRequest, createProcess } from './../../src/process';
 import { Pointer } from './../../src/state/Pointer';
 import { createUndoManager, createHistoryManager } from './../../src/extras';
 import { Store } from './../../src/Store';
@@ -18,16 +18,10 @@ describe('extras', () => {
 		const { historyCollector, serialize, hydrate } = createHistoryManager();
 		const store = new Store();
 
-		const logger = (callback?: any) => {
-			return (error: ProcessError | null, result: ProcessResult): void => {
-				console.log('-------> set counter to', (result.operations[0] as any).value);
-				callback && callback(error, result);
-			};
-		};
 		const incrementCounterProcess = createProcess(
 			'increment',
 			[incrementCounter],
-			historyCollector(undoCollector(logger()))
+			historyCollector(undoCollector())
 		);
 		const executor = incrementCounterProcess(store);
 		executor({});
