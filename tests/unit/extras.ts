@@ -4,7 +4,7 @@ const { assert } = intern.getPlugin('chai');
 import { OperationType, PatchOperation } from './../../src/state/Patch';
 import { CommandRequest, createProcess } from './../../src/process';
 import { Pointer } from './../../src/state/Pointer';
-import { createUndoManager, createHistoryManager } from './../../src/extras';
+import { createHistoryManager } from './../../src/extras';
 import { Store } from './../../src/Store';
 
 function incrementCounter({ get, path }: CommandRequest<{ counter: number }>): PatchOperation[] {
@@ -14,15 +14,10 @@ function incrementCounter({ get, path }: CommandRequest<{ counter: number }>): P
 
 describe('extras', () => {
 	it('can serialize and re-hydrate history non destructively', () => {
-		const undoManager = createUndoManager();
 		const historyManager = createHistoryManager();
 		const store = new Store();
 
-		const incrementCounterProcess = createProcess(
-			'increment',
-			[incrementCounter],
-			historyManager.collector(undoManager.collector())
-		);
+		const incrementCounterProcess = createProcess('increment', [incrementCounter], historyManager.collector());
 		const executor = incrementCounterProcess(store);
 		executor({});
 		assert.strictEqual(store.get(store.path('counter')), 1);
@@ -39,16 +34,27 @@ describe('extras', () => {
 		historyManager.deserialize(storeCopy, JSON.parse(json));
 		// should be re-hydrated
 		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 3);
-		// can undo the history
-		undoManager.undo(storeCopy);
-		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 2);
-		undoManager.undo(storeCopy);
-		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 1);
 		// storeCopy history is identical to original store history
+		assert.deepEqual(historyManager.serialize(store), historyManager.serialize(storeCopy));
+		// can undo the history
+		historyManager.undo(storeCopy);
+		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 2);
+		historyManager.undo(storeCopy);
+		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 1);
+		// history should now be 1 item
+		assert.strictEqual(historyManager.serialize(storeCopy).length, 1);
+
+		// undo on original store
+		historyManager.undo(store);
+		assert.strictEqual(store.get(store.path('counter')), 2);
+		historyManager.undo(store);
+		assert.strictEqual(storeCopy.get(store.path('counter')), 1);
+		// histories should now be identical
+		// history should now be 1 item
 		assert.deepEqual(historyManager.serialize(store), historyManager.serialize(storeCopy));
 	});
 
-	it('collects undo functions for all processes using collector', () => {
+	/*it('collects undo functions for all processes using collector', () => {
 		const undoManager = createUndoManager();
 		const store = new Store();
 		let localUndoStack: any[] = [];
@@ -104,5 +110,5 @@ describe('extras', () => {
 			Error,
 			'Test operation failure. Unable to apply any operations.'
 		);
-	});
+	});*/
 });

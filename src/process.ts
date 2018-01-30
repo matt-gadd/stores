@@ -72,6 +72,7 @@ export interface ProcessResult<T = any, P extends object = DefaultPayload> exten
 	store: Store<any>;
 	undo: Undo;
 	operations: PatchOperation<T>[];
+	undoOperations: PatchOperation<T>[];
 	apply: (operations: PatchOperation<T>[], invalidate?: boolean) => PatchOperation<T>[];
 	payload: P;
 	error?: ProcessError<T> | null;
@@ -190,9 +191,22 @@ export function processExecutor<T = any, P extends object = DefaultPayload>(
 		}
 
 		callback &&
-			callback(error, { store, processId: id, operations, undo, apply, at, get, path, executor, payload });
+			callback(error, {
+				undoOperations,
+				store,
+				processId: id,
+				operations,
+				undo,
+				apply,
+				at,
+				get,
+				path,
+				executor,
+				payload
+			});
 		return Promise.resolve({
 			store,
+			undoOperations,
 			processId: id,
 			error,
 			operations,
