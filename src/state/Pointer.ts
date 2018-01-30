@@ -81,7 +81,7 @@ export class Pointer<T = any, U = any> {
 		return pointerTarget.target[pointerTarget.segment];
 	}
 
-	toJSON() {
+	toJSON(): string {
 		return this.path;
 	}
 }
