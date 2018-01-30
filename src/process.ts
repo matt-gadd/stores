@@ -68,6 +68,7 @@ export interface ProcessResultExecutor<T = any> {
  */
 export interface ProcessResult<T = any, P extends object = DefaultPayload> extends State<T> {
 	executor: ProcessResultExecutor<T>;
+	store: Store<any>;
 	undo: Undo;
 	operations: PatchOperation<T>[];
 	apply: (operations: PatchOperation<T>[], invalidate?: boolean) => PatchOperation<T>[];
@@ -108,7 +109,7 @@ export interface ProcessCallbackDecorator {
  * CreateProcess factory interface
  */
 export interface CreateProcess<T = any, P extends object = DefaultPayload> {
-	(commands: (Command<T, P>[] | Command<T, P>)[], callback?: ProcessCallback<T>): Process<T, P>;
+	(id: string, commands: (Command<T, P>[] | Command<T, P>)[], callback?: ProcessCallback<T>): Process<T, P>;
 }
 
 /**
@@ -140,8 +141,9 @@ export function getProcess(id: string) {
  * @param callback Callback called after the process is completed
  */
 export function createProcess<T = any, P extends object = DefaultPayload>(
+	id: string,
 	commands: Commands<T, P>,
-	{ id, callback }: ProcessOptions = {}
+	callback?: ProcessCallback
 ): Process<T, P> {
 	if (id) {
 		ids[id] = [commands, { id, callback }];
@@ -193,8 +195,21 @@ export function createProcess<T = any, P extends object = DefaultPayload>(
 				error = { error: e, command };
 			}
 
-			callback && callback(error, { processId: id, operations, undo, apply, at, get, path, executor, payload });
-			return Promise.resolve({ processId: id, error, operations, undo, apply, at, get, path, executor, payload });
+			callback &&
+				callback(error, { store, processId: id, operations, undo, apply, at, get, path, executor, payload });
+			return Promise.resolve({
+				store,
+				processId: id,
+				error,
+				operations,
+				undo,
+				apply,
+				at,
+				get,
+				path,
+				executor,
+				payload
+			});
 		};
 	}
 	return processExecutor;
@@ -205,11 +220,11 @@ export function createProcess<T = any, P extends object = DefaultPayload>(
  * @param callbackDecorators array of process callback decorators to be used by the return factory.
  */
 export function createProcessFactoryWith(callbackDecorators: ProcessCallbackDecorator[]): CreateProcess {
-	return (commands: (Command[] | Command)[], callback?: ProcessCallback): Process => {
+	return (id: string, commands: (Command[] | Command)[], callback?: ProcessCallback): Process => {
 		const decoratedCallback = callbackDecorators.reduce((callback, callbackDecorator) => {
 			return callbackDecorator(callback);
 		}, callback);
-		return createProcess(commands, { callback: decoratedCallback });
+		return createProcess(id, commands, decoratedCallback);
 	};
 }
 

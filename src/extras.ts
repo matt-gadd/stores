@@ -4,18 +4,18 @@ import {
 	ProcessError,
 	ProcessResult,
 	ProcessCallback,
-	ProcessCallbackDecorator,
-	Undo
+	ProcessCallbackDecorator
 } from './process';
 import { PatchOperation } from '../src/state/Patch';
 import { Pointer } from '../src/state/Pointer';
+import WeakMap from '@dojo/shim/WeakMap';
 
 /**
  * Undo manager interface
  */
 export interface UndoManager {
 	undoCollector: ProcessCallbackDecorator;
-	undoer: () => void;
+	undoer: (store: any) => void;
 }
 
 /**
@@ -23,13 +23,15 @@ export interface UndoManager {
  * higher order collector function that can be used as the process callback.
  */
 export function createUndoManager(): UndoManager {
-	const undoStack: Undo[] = [];
+	const storeMap = new WeakMap();
 
 	return {
 		undoCollector: (callback?: any): ProcessCallback => {
 			return (error: ProcessError | null, result: ProcessResult): void => {
-				const { undo } = result;
+				const { undo, store } = result;
+				const undoStack = storeMap.get(store) || [];
 				undoStack.push(undo);
+				storeMap.set(store, undoStack);
 
 				result.undo = (): void => {
 					const index = undoStack.indexOf(undo);
@@ -41,7 +43,8 @@ export function createUndoManager(): UndoManager {
 				callback && callback(error, result);
 			};
 		},
-		undoer: (): void => {
+		undoer: (store): void => {
+			const undoStack = storeMap.get(store) || [];
 			const undo = undoStack.pop();
 			if (undo !== undefined) {
 				undo();
@@ -52,27 +55,29 @@ export function createUndoManager(): UndoManager {
 
 export interface HistoryManager {
 	historyCollector: ProcessCallbackDecorator;
-	serialize: () => PatchOperation[][];
-	hydrate: (history: any[][], store: any, processCallback?: any) => void;
+	serialize: (store: any) => PatchOperation[][];
+	hydrate: (store: any, history: any[][]) => void;
 }
 
 export function createHistoryManager(): HistoryManager {
-	const historyStack: any[] = [];
+	const storeMap = new WeakMap();
 	return {
 		historyCollector(callback?: any) {
 			return (error: ProcessError | null, result: ProcessResult): void => {
-				const { operations, processId } = result;
+				const { operations, processId, store } = result;
+				const historyStack = storeMap.get(store) || [];
 				historyStack.push({ processId, operations });
+				storeMap.set(store, historyStack);
 				callback && callback(error, result);
 			};
 		},
-		hydrate(history, store, processCallback) {
+		hydrate(store, history) {
 			history.forEach(({ processId, operations }: any) => {
 				operations = (operations as any[]).map((operation) => {
 					operation.path = new Pointer(operation.path);
 					return operation;
 				});
-				let callback = processCallback;
+				let callback;
 				if (processId) {
 					const process = getProcess(processId);
 					if (process) {
@@ -80,10 +85,11 @@ export function createHistoryManager(): HistoryManager {
 						callback = options.callback;
 					}
 				}
-				return createProcess([() => operations], { callback })(store)({});
+				return createProcess(processId, [() => operations], callback)(store)({});
 			});
 		},
-		serialize() {
+		serialize(store) {
+			const historyStack = storeMap.get(store) || [];
 			return historyStack;
 		}
 	};
