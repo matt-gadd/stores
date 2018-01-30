@@ -1,6 +1,7 @@
 import { isThenable } from '@dojo/shim/Promise';
 import { PatchOperation } from './state/Patch';
 import { State, Store } from './Store';
+import Map from '@dojo/shim/Map';
 
 /**
  * Default Payload interface
@@ -129,10 +130,10 @@ export interface ProcessOptions {
 	callback?: ProcessCallback;
 }
 
-const ids: any = {};
+const processMap = new Map();
 
 export function getProcess(id: string) {
-	return ids[id];
+	return processMap.get(id);
 }
 
 export function processExecutor<T = any, P extends object = DefaultPayload>(
@@ -217,7 +218,7 @@ export function createProcess<T = any, P extends object = DefaultPayload>(
 	callback?: ProcessCallback
 ): Process<T, P> {
 	if (id) {
-		ids[id] = [commands, { id, callback }];
+		processMap.set(id, [id, commands, callback]);
 	}
 	return (store: Store<T>, transformer?: Transformer<P>) =>
 		processExecutor(id, commands, store, callback, transformer);
