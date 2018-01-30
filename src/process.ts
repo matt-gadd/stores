@@ -125,11 +125,6 @@ export function createCommandFactory<T, P extends object = DefaultPayload>(): Co
  */
 export type Commands<T = any, P extends object = DefaultPayload> = (Command<T, P>[] | Command<T, P>)[];
 
-export interface ProcessOptions {
-	id?: string;
-	callback?: ProcessCallback;
-}
-
 const processMap = new Map();
 
 export function getProcess(id: string) {
