@@ -2,9 +2,9 @@ const { describe, it } = intern.getInterface('bdd');
 const { assert } = intern.getPlugin('chai');
 
 import { OperationType, PatchOperation } from './../../src/state/Patch';
-import { CommandRequest, createProcess } from './../../src/process';
+import { CommandRequest, createProcess, ProcessError, ProcessResult } from './../../src/process';
 import { Pointer } from './../../src/state/Pointer';
-import { createUndoManager } from './../../src/extras';
+import { createUndoManager, createHistoryManager } from './../../src/extras';
 import { Store } from './../../src/Store';
 
 function incrementCounter({ get, path }: CommandRequest<{ counter: number }>): PatchOperation[] {
@@ -13,6 +13,47 @@ function incrementCounter({ get, path }: CommandRequest<{ counter: number }>): P
 }
 
 describe('extras', () => {
+	it('can serialize and re-hydrate history non destructively', () => {
+		const { undoCollector, undoer } = createUndoManager();
+		const { historyCollector, serialize, hydrate } = createHistoryManager();
+		const store = new Store();
+
+		const logger = (callback?: any) => {
+			return (error: ProcessError | null, result: ProcessResult): void => {
+				console.log('-------> set counter to', (result.operations[0] as any).value);
+				callback && callback(error, result);
+			};
+		};
+		const incrementCounterProcess = createProcess([incrementCounter], {
+			// required to track callbacks
+			id: 'counter',
+			callback: historyCollector(undoCollector(logger()))
+		});
+		const executor = incrementCounterProcess(store);
+		executor({});
+		assert.strictEqual(store.get(store.path('counter')), 1);
+		executor({});
+		assert.strictEqual(store.get(store.path('counter')), 2);
+		executor({});
+		assert.strictEqual(store.get(store.path('counter')), 3);
+
+		// serialize the history
+		const json = JSON.stringify(serialize());
+		// deserialize it
+		const history = JSON.parse(json);
+		// create a new store
+		const storeCopy = new Store();
+		// hydrate the new store with the history
+		hydrate(history, storeCopy);
+		// should be re-hydrated
+		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 3);
+		// can undo the history
+		undoer();
+		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 2);
+		undoer();
+		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 1);
+	});
+
 	it('collects undo functions for all processes using collector', () => {
 		const { undoCollector, undoer } = createUndoManager();
 		const store = new Store();
