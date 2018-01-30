@@ -81,8 +81,7 @@ export function createHistoryManager(): HistoryManager {
 				if (processId) {
 					const process = getProcess(processId);
 					if (process) {
-						const [, options] = process;
-						callback = options.callback;
+						callback = process[2];
 					}
 				}
 				processExecutor(processId, [() => operations], store, callback, undefined)({});
