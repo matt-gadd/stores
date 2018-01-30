@@ -13,7 +13,7 @@ function incrementCounter({ get, path }: CommandRequest<{ counter: number }>): P
 }
 
 describe('extras', () => {
-	it('can serialize and re-hydrate history non destructively', () => {
+	it('can serialize and deserialize history', () => {
 		const historyManager = createHistoryManager();
 		const store = new Store();
 
@@ -55,7 +55,7 @@ describe('extras', () => {
 		assert.deepEqual(historyManager.serialize(store), historyManager.serialize(storeCopy));
 	});
 
-	it('collects undo functions for all processes using collector', () => {
+	it('can undo', () => {
 		const historyManager = createHistoryManager();
 		const store = new Store();
 		const incrementCounterProcess = createProcess('increment', [incrementCounter], historyManager.collector());
