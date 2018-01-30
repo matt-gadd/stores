@@ -1,62 +1,13 @@
-import {
-	processExecutor,
-	getProcess,
-	ProcessError,
-	ProcessResult,
-	ProcessCallback,
-	ProcessCallbackDecorator
-} from './process';
+import { processExecutor, getProcess, ProcessError, ProcessResult, ProcessCallbackDecorator } from './process';
 import { PatchOperation } from '../src/state/Patch';
 import { Pointer } from '../src/state/Pointer';
 import WeakMap from '@dojo/shim/WeakMap';
-
-/**
- * Undo manager interface
- */
-export interface UndoManager {
-	collector: ProcessCallbackDecorator;
-	undo: (store: any) => void;
-}
-
-/**
- * Factory function that returns an undoer function that will undo the last executed process and a
- * higher order collector function that can be used as the process callback.
- */
-export function createUndoManager(): UndoManager {
-	const storeMap = new WeakMap();
-
-	return {
-		collector: (callback?: any): ProcessCallback => {
-			return (error: ProcessError | null, result: ProcessResult): void => {
-				const { undo, store } = result;
-				const undoStack = storeMap.get(store) || [];
-				undoStack.push(undo);
-				storeMap.set(store, undoStack);
-
-				result.undo = (): void => {
-					const index = undoStack.indexOf(undo);
-					if (index !== -1) {
-						undoStack.splice(index, 1);
-					}
-					undo();
-				};
-				callback && callback(error, result);
-			};
-		},
-		undo: (store): void => {
-			const undoStack = storeMap.get(store) || [];
-			const undo = undoStack.pop();
-			if (undo !== undefined) {
-				undo();
-			}
-		}
-	};
-}
 
 export interface HistoryManager {
 	collector: ProcessCallbackDecorator;
 	serialize: (store: any) => PatchOperation[][];
 	deserialize: (store: any, history: any[][]) => void;
+	undo: (store: any) => void;
 }
 
 export function createHistoryManager(): HistoryManager {
@@ -64,12 +15,27 @@ export function createHistoryManager(): HistoryManager {
 	return {
 		collector(callback?: any) {
 			return (error: ProcessError | null, result: ProcessResult): void => {
-				const { operations, processId, store } = result;
-				const historyStack = storeMap.get(store) || [];
-				historyStack.push({ processId, operations });
-				storeMap.set(store, historyStack);
+				const { operations, undoOperations, processId, store } = result;
+				const { history, undo } = storeMap.get(store) || {
+					history: [],
+					undo: []
+				};
+				history.push({ processId, operations });
+				undo.push(undoOperations);
+				storeMap.set(store, { history, undo });
 				callback && callback(error, result);
 			};
+		},
+		undo(store) {
+			const stacks = storeMap.get(store);
+			if (stacks) {
+				const { history, undo } = stacks;
+				if (undo.length && history.length) {
+					history.pop();
+					store.apply(undo.pop());
+					storeMap.set(store, { history, undo });
+				}
+			}
 		},
 		deserialize(store, history) {
 			history.forEach(({ processId, operations }: any) => {
@@ -88,8 +54,12 @@ export function createHistoryManager(): HistoryManager {
 			});
 		},
 		serialize(store) {
-			const historyStack = storeMap.get(store) || [];
-			return historyStack;
+			const stacks = storeMap.get(store);
+			if (stacks) {
+				const { history } = stacks;
+				return history;
+			}
+			return [];
 		}
 	};
 }
