@@ -267,18 +267,6 @@ describe('process', () => {
 		processExecutor({});
 	});
 
-	it('process can be undone using the undo function provided via the callback', () => {
-		const process = createProcess('test', [testCommandFactory('foo')], (error, result) => {
-			let foo = store.get(store.path('foo'));
-			assert.strictEqual(foo, 'foo');
-			result.undo();
-			foo = store.get(store.path('foo'));
-			assert.isUndefined(foo);
-		});
-		const processExecutor = process(store);
-		processExecutor({});
-	});
-
 	it('Creating a process returned automatically decorates all process callbacks', () => {
 		let results: string[] = [];
 

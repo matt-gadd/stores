@@ -36,7 +36,8 @@ describe('extras', () => {
 		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 3);
 		// storeCopy history is identical to original store history
 		assert.deepEqual(historyManager.serialize(store), historyManager.serialize(storeCopy));
-		// can undo the history
+
+		// can undo on new storeCopy
 		historyManager.undo(storeCopy);
 		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 2);
 		historyManager.undo(storeCopy);
@@ -49,8 +50,8 @@ describe('extras', () => {
 		assert.strictEqual(store.get(store.path('counter')), 2);
 		historyManager.undo(store);
 		assert.strictEqual(storeCopy.get(store.path('counter')), 1);
+
 		// histories should now be identical
-		// history should now be 1 item
 		assert.deepEqual(historyManager.serialize(store), historyManager.serialize(storeCopy));
 	});
 

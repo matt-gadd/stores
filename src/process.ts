@@ -70,7 +70,6 @@ export interface ProcessResultExecutor<T = any> {
 export interface ProcessResult<T = any, P extends object = DefaultPayload> extends State<T> {
 	executor: ProcessResultExecutor<T>;
 	store: Store<any>;
-	undo: Undo;
 	operations: PatchOperation<T>[];
 	undoOperations: PatchOperation<T>[];
 	apply: (operations: PatchOperation<T>[], invalidate?: boolean) => PatchOperation<T>[];
@@ -157,10 +156,6 @@ export function processExecutor<T = any, P extends object = DefaultPayload>(
 		const undoOperations: PatchOperation[] = [];
 		const operations: PatchOperation[] = [];
 		const commandsCopy = [...commands];
-		const undo = () => {
-			store.apply(undoOperations, true);
-		};
-
 		let command = commandsCopy.shift();
 		let error: ProcessError | null = null;
 		const payload = transformer ? transformer(executorPayload) : executorPayload;
@@ -196,7 +191,6 @@ export function processExecutor<T = any, P extends object = DefaultPayload>(
 				store,
 				processId: id,
 				operations,
-				undo,
 				apply,
 				at,
 				get,
@@ -210,7 +204,6 @@ export function processExecutor<T = any, P extends object = DefaultPayload>(
 			processId: id,
 			error,
 			operations,
-			undo,
 			apply,
 			at,
 			get,
