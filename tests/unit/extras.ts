@@ -55,17 +55,10 @@ describe('extras', () => {
 		assert.deepEqual(historyManager.serialize(store), historyManager.serialize(storeCopy));
 	});
 
-	/*it('collects undo functions for all processes using collector', () => {
-		const undoManager = createUndoManager();
+	it('collects undo functions for all processes using collector', () => {
+		const historyManager = createHistoryManager();
 		const store = new Store();
-		let localUndoStack: any[] = [];
-		const incrementCounterProcess = createProcess(
-			'increment',
-			[incrementCounter],
-			undoManager.collector((error, result) => {
-				localUndoStack.push(result.undo);
-			})
-		);
+		const incrementCounterProcess = createProcess('increment', [incrementCounter], historyManager.collector());
 		const executor = incrementCounterProcess(store);
 		executor({});
 		assert.strictEqual(store.get(store.path('counter')), 1);
@@ -73,43 +66,17 @@ describe('extras', () => {
 		assert.strictEqual(store.get(store.path('counter')), 2);
 		executor({});
 		assert.strictEqual(store.get(store.path('counter')), 3);
-		localUndoStack[2]();
+		historyManager.undo(store);
 		assert.strictEqual(store.get(store.path('counter')), 2);
-		undoManager.undo(store);
-		assert.strictEqual(store.get(store.path('counter')), 1);
 	});
 
 	it('undo has no effect if there are no undo functions on the stack', () => {
-		const undoManager = createUndoManager();
+		const historyManager = createHistoryManager();
 		const store = new Store();
 		const incrementCounterProcess = createProcess('increment', [incrementCounter]);
 		const executor = incrementCounterProcess(store);
 		executor({});
-		undoManager.undo(store);
+		historyManager.undo(store);
 		assert.strictEqual(store.get(store.path('counter')), 1);
 	});
-
-	it('local undo throws an error if global undo has already been executed', () => {
-		const undoManager = createUndoManager();
-		const store = new Store();
-		let localUndo: any;
-		const incrementCounterProcess = createProcess(
-			'increment',
-			[incrementCounter],
-			undoManager.collector((error, result) => {
-				localUndo = result.undo;
-			})
-		);
-		const executor = incrementCounterProcess(store);
-		executor({});
-		assert.strictEqual(store.get(store.path('counter')), 1);
-		undoManager.undo(store);
-		assert.throws(
-			() => {
-				localUndo && localUndo();
-			},
-			Error,
-			'Test operation failure. Unable to apply any operations.'
-		);
-	});*/
 });
