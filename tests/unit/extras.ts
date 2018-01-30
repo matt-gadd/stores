@@ -14,14 +14,14 @@ function incrementCounter({ get, path }: CommandRequest<{ counter: number }>): P
 
 describe('extras', () => {
 	it('can serialize and re-hydrate history non destructively', () => {
-		const { undoCollector, undoer } = createUndoManager();
-		const { historyCollector, serialize, hydrate } = createHistoryManager();
+		const undoManager = createUndoManager();
+		const historyManager = createHistoryManager();
 		const store = new Store();
 
 		const incrementCounterProcess = createProcess(
 			'increment',
 			[incrementCounter],
-			historyCollector(undoCollector())
+			historyManager.collector(undoManager.collector())
 		);
 		const executor = incrementCounterProcess(store);
 		executor({});
@@ -32,30 +32,30 @@ describe('extras', () => {
 		assert.strictEqual(store.get(store.path('counter')), 3);
 
 		// serialize the history
-		const json = JSON.stringify(serialize(store));
+		const json = JSON.stringify(historyManager.serialize(store));
 		// deserialize it
 		const history = JSON.parse(json);
 		// create a new store
 		const storeCopy = new Store();
 		// hydrate the new store with the history
-		hydrate(storeCopy, history);
+		historyManager.hydrate(storeCopy, history);
 		// should be re-hydrated
 		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 3);
 		// can undo the history
-		undoer(storeCopy);
+		undoManager.undo(storeCopy);
 		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 2);
-		undoer(storeCopy);
+		undoManager.undo(storeCopy);
 		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 1);
 	});
 
 	it('collects undo functions for all processes using collector', () => {
-		const { undoCollector, undoer } = createUndoManager();
+		const undoManager = createUndoManager();
 		const store = new Store();
 		let localUndoStack: any[] = [];
 		const incrementCounterProcess = createProcess(
 			'increment',
 			[incrementCounter],
-			undoCollector((error, result) => {
+			undoManager.collector((error, result) => {
 				localUndoStack.push(result.undo);
 			})
 		);
@@ -68,35 +68,35 @@ describe('extras', () => {
 		assert.strictEqual(store.get(store.path('counter')), 3);
 		localUndoStack[2]();
 		assert.strictEqual(store.get(store.path('counter')), 2);
-		undoer(store);
+		undoManager.undo(store);
 		assert.strictEqual(store.get(store.path('counter')), 1);
 	});
 
 	it('undo has no effect if there are no undo functions on the stack', () => {
-		const { undoer } = createUndoManager();
+		const undoManager = createUndoManager();
 		const store = new Store();
 		const incrementCounterProcess = createProcess('increment', [incrementCounter]);
 		const executor = incrementCounterProcess(store);
 		executor({});
-		undoer(store);
+		undoManager.undo(store);
 		assert.strictEqual(store.get(store.path('counter')), 1);
 	});
 
 	it('local undo throws an error if global undo has already been executed', () => {
-		const { undoCollector, undoer } = createUndoManager();
+		const undoManager = createUndoManager();
 		const store = new Store();
 		let localUndo: any;
 		const incrementCounterProcess = createProcess(
 			'increment',
 			[incrementCounter],
-			undoCollector((error, result) => {
+			undoManager.collector((error, result) => {
 				localUndo = result.undo;
 			})
 		);
 		const executor = incrementCounterProcess(store);
 		executor({});
 		assert.strictEqual(store.get(store.path('counter')), 1);
-		undoer(store);
+		undoManager.undo(store);
 		assert.throws(
 			() => {
 				localUndo && localUndo();

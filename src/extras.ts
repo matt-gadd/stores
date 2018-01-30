@@ -14,8 +14,8 @@ import WeakMap from '@dojo/shim/WeakMap';
  * Undo manager interface
  */
 export interface UndoManager {
-	undoCollector: ProcessCallbackDecorator;
-	undoer: (store: any) => void;
+	collector: ProcessCallbackDecorator;
+	undo: (store: any) => void;
 }
 
 /**
@@ -26,7 +26,7 @@ export function createUndoManager(): UndoManager {
 	const storeMap = new WeakMap();
 
 	return {
-		undoCollector: (callback?: any): ProcessCallback => {
+		collector: (callback?: any): ProcessCallback => {
 			return (error: ProcessError | null, result: ProcessResult): void => {
 				const { undo, store } = result;
 				const undoStack = storeMap.get(store) || [];
@@ -43,7 +43,7 @@ export function createUndoManager(): UndoManager {
 				callback && callback(error, result);
 			};
 		},
-		undoer: (store): void => {
+		undo: (store): void => {
 			const undoStack = storeMap.get(store) || [];
 			const undo = undoStack.pop();
 			if (undo !== undefined) {
@@ -54,7 +54,7 @@ export function createUndoManager(): UndoManager {
 }
 
 export interface HistoryManager {
-	historyCollector: ProcessCallbackDecorator;
+	collector: ProcessCallbackDecorator;
 	serialize: (store: any) => PatchOperation[][];
 	hydrate: (store: any, history: any[][]) => void;
 }
@@ -62,7 +62,7 @@ export interface HistoryManager {
 export function createHistoryManager(): HistoryManager {
 	const storeMap = new WeakMap();
 	return {
-		historyCollector(callback?: any) {
+		collector(callback?: any) {
 			return (error: ProcessError | null, result: ProcessResult): void => {
 				const { operations, processId, store } = result;
 				const historyStack = storeMap.get(store) || [];
