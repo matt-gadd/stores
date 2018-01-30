@@ -1,4 +1,14 @@
-import { ProcessError, ProcessResult, ProcessCallback, ProcessCallbackDecorator, Undo } from './process';
+import {
+	createProcess,
+	getProcess,
+	ProcessError,
+	ProcessResult,
+	ProcessCallback,
+	ProcessCallbackDecorator,
+	Undo
+} from './process';
+import { PatchOperation } from '../src/state/Patch';
+import { Pointer } from '../src/state/Pointer';
 
 /**
  * Undo manager interface
@@ -36,6 +46,45 @@ export function createUndoManager(): UndoManager {
 			if (undo !== undefined) {
 				undo();
 			}
+		}
+	};
+}
+
+export interface HistoryManager {
+	historyCollector: ProcessCallbackDecorator;
+	serialize: () => PatchOperation[][];
+	hydrate: (history: any[][], store: any, processCallback?: any) => void;
+}
+
+export function createHistoryManager(): HistoryManager {
+	const historyStack: any[] = [];
+	return {
+		historyCollector(callback?: any) {
+			return (error: ProcessError | null, result: ProcessResult): void => {
+				const { operations, processId } = result;
+				historyStack.push({ processId, operations });
+				callback && callback(error, result);
+			};
+		},
+		hydrate(history, store, processCallback) {
+			history.forEach(({ processId, operations }: any) => {
+				operations = (operations as any[]).map((operation) => {
+					operation.path = new Pointer(operation.path);
+					return operation;
+				});
+				let callback = processCallback;
+				if (processId) {
+					const process = getProcess(processId);
+					if (process) {
+						const [, options] = process;
+						callback = options.callback;
+					}
+				}
+				return createProcess([() => operations], { callback })(store)({});
+			});
+		},
+		serialize() {
+			return historyStack;
 		}
 	};
 }

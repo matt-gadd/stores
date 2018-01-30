@@ -73,6 +73,7 @@ export interface ProcessResult<T = any, P extends object = DefaultPayload> exten
 	apply: (operations: PatchOperation<T>[], invalidate?: boolean) => PatchOperation<T>[];
 	payload: P;
 	error?: ProcessError<T> | null;
+	processId?: string;
 }
 
 /**
@@ -123,9 +124,15 @@ export function createCommandFactory<T, P extends object = DefaultPayload>(): Co
 export type Commands<T = any, P extends object = DefaultPayload> = (Command<T, P>[] | Command<T, P>)[];
 
 export interface ProcessOptions {
+	id?: string;
 	callback?: ProcessCallback;
 }
 
+const ids: any = {};
+
+export function getProcess(id: string) {
+	return ids[id];
+}
 /**
  * Factories a process using the provided commands and an optional callback. Returns an executor used to run the process.
  *
@@ -134,8 +141,11 @@ export interface ProcessOptions {
  */
 export function createProcess<T = any, P extends object = DefaultPayload>(
 	commands: Commands<T, P>,
-	{ callback }: ProcessOptions = {}
+	{ id, callback }: ProcessOptions = {}
 ): Process<T, P> {
+	if (id) {
+		ids[id] = [commands, { id, callback }];
+	}
 	function processExecutor(store: Store<T>, transformer?: Transformer<P>): ProcessExecutor<T, any, any> {
 		const { apply, get, path, at } = store;
 		function executor(
@@ -183,8 +193,8 @@ export function createProcess<T = any, P extends object = DefaultPayload>(
 				error = { error: e, command };
 			}
 
-			callback && callback(error, { operations, undo, apply, at, get, path, executor, payload });
-			return Promise.resolve({ error, operations, undo, apply, at, get, path, executor, payload });
+			callback && callback(error, { processId: id, operations, undo, apply, at, get, path, executor, payload });
+			return Promise.resolve({ processId: id, error, operations, undo, apply, at, get, path, executor, payload });
 		};
 	}
 	return processExecutor;
