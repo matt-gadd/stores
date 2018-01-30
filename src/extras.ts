@@ -56,7 +56,7 @@ export function createUndoManager(): UndoManager {
 export interface HistoryManager {
 	collector: ProcessCallbackDecorator;
 	serialize: (store: any) => PatchOperation[][];
-	hydrate: (store: any, history: any[][]) => void;
+	deserialize: (store: any, history: any[][]) => void;
 }
 
 export function createHistoryManager(): HistoryManager {
@@ -71,7 +71,7 @@ export function createHistoryManager(): HistoryManager {
 				callback && callback(error, result);
 			};
 		},
-		hydrate(store, history) {
+		deserialize(store, history) {
 			history.forEach(({ processId, operations }: any) => {
 				operations = (operations as any[]).map((operation) => {
 					operation.path = new Pointer(operation.path);

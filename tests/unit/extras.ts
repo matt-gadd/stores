@@ -33,12 +33,10 @@ describe('extras', () => {
 
 		// serialize the history
 		const json = JSON.stringify(historyManager.serialize(store));
-		// deserialize it
-		const history = JSON.parse(json);
 		// create a new store
 		const storeCopy = new Store();
-		// hydrate the new store with the history
-		historyManager.hydrate(storeCopy, history);
+		// deserialize the new store with the history
+		historyManager.deserialize(storeCopy, JSON.parse(json));
 		// should be re-hydrated
 		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 3);
 		// can undo the history
@@ -46,6 +44,8 @@ describe('extras', () => {
 		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 2);
 		undoManager.undo(storeCopy);
 		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 1);
+		// storeCopy history is identical to original store history
+		assert.deepEqual(historyManager.serialize(store), historyManager.serialize(storeCopy));
 	});
 
 	it('collects undo functions for all processes using collector', () => {
