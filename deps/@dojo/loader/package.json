@@ -1,0 +1,62 @@
+{
+  "_args": [
+    [
+      "@dojo/loader@0.1.1",
+      "/Users/matt/projects/stores"
+    ]
+  ],
+  "_development": true,
+  "_from": "@dojo/loader@0.1.1",
+  "_id": "@dojo/loader@0.1.1",
+  "_inBundle": false,
+  "_integrity": "sha512-DRfG8tCaV1kJdFHxN+qW3KY2clVna/Y5f5aXfG5gOxY7JDwqvQ+ooU8xtKY4Ob53FH0yOUFKMbiiIMbgyCWyrA==",
+  "_location": "/@dojo/loader",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "version",
+    "registry": true,
+    "raw": "@dojo/loader@0.1.1",
+    "name": "@dojo/loader",
+    "escapedName": "@dojo%2floader",
+    "scope": "@dojo",
+    "rawSpec": "0.1.1",
+    "saveSpec": null,
+    "fetchSpec": "0.1.1"
+  },
+  "_requiredBy": [
+    "#DEV:/"
+  ],
+  "_resolved": "https://registry.npmjs.org/@dojo/loader/-/loader-0.1.1.tgz",
+  "_spec": "0.1.1",
+  "_where": "/Users/matt/projects/stores",
+  "bugs": {
+    "url": "https://github.com/dojo/loader/issues"
+  },
+  "description": "JavaScript module loader for web applications.",
+  "devDependencies": {
+    "@dojo/loader": "beta3",
+    "@types/chai": "~3.4.0",
+    "@types/glob": "~5.0.0",
+    "@types/grunt": "~0.4.0",
+    "@types/node": "~6.0.0",
+    "dts-generator": "~2.0.0",
+    "grunt": "^1.0.1",
+    "grunt-contrib-uglify": "^2.0.0",
+    "grunt-dojo2": "latest",
+    "intern": "~4.1.0",
+    "typescript": "~2.6.1"
+  },
+  "engines": {
+    "npm": ">=3.0.0"
+  },
+  "homepage": "https://dojo.io",
+  "license": "BSD-3-Clause",
+  "main": "loader.js",
+  "name": "@dojo/loader",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dojo/loader.git"
+  },
+  "typings": "dojo-loader.d.ts",
+  "version": "0.1.1"
+}

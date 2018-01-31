@@ -28,15 +28,15 @@
 	</style>
 </head>
 <body>
-	<script src="../node_modules/@dojo/loader/loader.min.js"></script>
+	<script src="../deps/@dojo/loader/loader.min.js"></script>
 	<script>
 		require.config({
 			baseUrl: '../',
 			packages: [
 				{ name: 'src', location: './_build/src' },
-				{ name: '@dojo', location: './node_modules/@dojo' },
-				{ name: 'pepjs', location: './node_modules/pepjs/dist', main: 'pep' },
-				{ name: 'tslib', location: './node_modules/tslib', main: 'tslib' }
+				{ name: '@dojo', location: './deps/@dojo' },
+				{ name: 'pepjs', location: './deps/pepjs/dist', main: 'pep' },
+				{ name: 'tslib', location: './deps/tslib', main: 'tslib' }
 			]
 		});
 		require([ './_build/examples/main' ], function () {});

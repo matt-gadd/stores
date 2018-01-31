@@ -60,11 +60,10 @@ class Example extends WidgetBase {
 
 	private _renderStore(store: Store<Increment>, key: number) {
 		const { path, get } = store;
-		return v('div', { classes: ['container'] }, [
+		return v('div', { key, classes: ['container'] }, [
 			v(
 				'div',
 				{
-					key,
 					classes: ['mdl-card', 'mdl-shadow--2dp']
 				},
 				[

@@ -1,0 +1,33 @@
+import { CustomElementInitializer } from '../customElements';
+import { Constructor, WidgetProperties } from '../interfaces';
+/**
+ * Defines the custom element configuration used by the customElement decorator
+ */
+export interface CustomElementConfig<P extends WidgetProperties> {
+    /**
+     * The tag of the custom element
+     */
+    tag: string;
+    /**
+     * List of widget properties to expose as properties on the custom element
+     */
+    properties?: (keyof P)[];
+    /**
+     * List of attributes on the custom element to map to widget properties
+     */
+    attributes?: (keyof P)[];
+    /**
+     * List of events to expose
+     */
+    events?: (keyof P)[];
+    /**
+     * Initialization function called before the widget is created (for custom property setting)
+     */
+    initialization?: CustomElementInitializer;
+}
+/**
+ * This Decorator is provided properties that define the behavior of a custom element, and
+ * registers that custom element.
+ */
+export declare function customElement<P extends WidgetProperties = WidgetProperties>({tag, properties, attributes, events, initialization}: CustomElementConfig<P>): <T extends Constructor<any>>(target: T) => void;
+export default customElement;
