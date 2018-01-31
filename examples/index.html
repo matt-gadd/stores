@@ -33,13 +33,13 @@
 		require.config({
 			baseUrl: '../',
 			packages: [
-				{ name: 'src', location: './_build/src' },
+				{ name: 'src', location: './dist/src' },
 				{ name: '@dojo', location: './deps/@dojo' },
 				{ name: 'pepjs', location: './deps/pepjs/dist', main: 'pep' },
 				{ name: 'tslib', location: './deps/tslib', main: 'tslib' }
 			]
 		});
-		require([ './_build/examples/main' ], function () {});
+		require([ './dist/examples/main' ], function () {});
 	</script>
 </body>
 </html>
