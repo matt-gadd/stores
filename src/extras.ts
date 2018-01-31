@@ -15,12 +15,12 @@ export function createHistoryManager(): HistoryManager {
 	return {
 		collector(callback?: any) {
 			return (error: ProcessError | null, result: ProcessResult): void => {
-				const { operations, undoOperations, processId, store } = result;
+				const { operations, undoOperations, id, store } = result;
 				const { history, undo } = storeMap.get(store) || {
 					history: [],
 					undo: []
 				};
-				history.push({ processId, operations });
+				history.push({ id, operations });
 				undo.push(undoOperations);
 				storeMap.set(store, { history, undo });
 				callback && callback(error, result);
@@ -38,19 +38,17 @@ export function createHistoryManager(): HistoryManager {
 			}
 		},
 		deserialize(store, history) {
-			history.forEach(({ processId, operations }: any) => {
+			history.forEach(({ id, operations }: any) => {
 				operations = (operations as any[]).map((operation) => {
 					operation.path = new Pointer(operation.path);
 					return operation;
 				});
 				let callback;
-				if (processId) {
-					const process = getProcess(processId);
-					if (process) {
-						callback = process[2];
-					}
+				const process = getProcess(id);
+				if (process) {
+					callback = process[2];
 				}
-				processExecutor(processId, [() => operations], store, callback, undefined)({});
+				processExecutor(id, [() => operations], store, callback, undefined)({});
 			});
 		},
 		serialize(store) {
