@@ -8,6 +8,7 @@ export interface HistoryManager {
 	serialize: (store: any) => PatchOperation[][];
 	deserialize: (store: any, history: any[][]) => void;
 	undo: (store: any) => void;
+	canUndo: (store: any) => boolean;
 }
 
 export function createHistoryManager(): HistoryManager {
@@ -25,6 +26,16 @@ export function createHistoryManager(): HistoryManager {
 				storeMap.set(store, { history, undo });
 				callback && callback(error, result);
 			};
+		},
+		canUndo(store) {
+			const stacks = storeMap.get(store);
+			if (stacks) {
+				const { history, undo } = stacks;
+				if (undo.length && history.length) {
+					return true;
+				}
+			}
+			return false;
 		},
 		undo(store) {
 			const stacks = storeMap.get(store);
