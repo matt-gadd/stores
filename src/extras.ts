@@ -8,6 +8,9 @@ export interface HistoryManager {
 	serialize: (store: any) => PatchOperation[][];
 	deserialize: (store: any, history: any[][]) => void;
 	undo: (store: any) => void;
+	redo: (store: any) => void;
+	canUndo: (store: any) => boolean;
+	canRedo: (store: any) => boolean;
 }
 
 export function createHistoryManager(): HistoryManager {
@@ -21,19 +24,54 @@ export function createHistoryManager(): HistoryManager {
 					undo: []
 				};
 				history.push({ id, operations });
-				undo.push(undoOperations);
-				storeMap.set(store, { history, undo });
+				undo.push({ id, operations: undoOperations });
+				storeMap.set(store, { history, undo, redo: [] });
 				callback && callback(error, result);
 			};
 		},
-		undo(store) {
+		canUndo(store) {
 			const stacks = storeMap.get(store);
 			if (stacks) {
 				const { history, undo } = stacks;
 				if (undo.length && history.length) {
+					return true;
+				}
+			}
+			return false;
+		},
+		canRedo(store) {
+			const stacks = storeMap.get(store);
+			if (stacks) {
+				const { redo } = stacks;
+				if (redo.length) {
+					return true;
+				}
+			}
+			return false;
+		},
+		redo(store) {
+			const stacks = storeMap.get(store);
+			if (stacks) {
+				const { history, redo, undo } = stacks;
+				if (redo.length) {
+					const { id, operations } = redo.pop();
+					const result = store.apply(operations);
+					history.push({ id, operations });
+					undo.push({ id, operations: result });
+					storeMap.set(store, { history, undo, redo });
+				}
+			}
+		},
+		undo(store) {
+			const stacks = storeMap.get(store);
+			if (stacks) {
+				const { history, undo, redo } = stacks;
+				if (undo.length && history.length) {
+					const { id, operations } = undo.pop();
 					history.pop();
-					store.apply(undo.pop());
-					storeMap.set(store, { history, undo });
+					const result = store.apply(operations);
+					redo.push({ id, operations: result });
+					storeMap.set(store, { history, undo, redo });
 				}
 			}
 		},

@@ -53,6 +53,19 @@ describe('extras', () => {
 
 		// histories should now be identical
 		assert.deepEqual(historyManager.serialize(store), historyManager.serialize(storeCopy));
+
+		historyManager.redo(store);
+		assert.strictEqual(store.get(store.path('counter')), 2);
+
+		historyManager.redo(store);
+		assert.strictEqual(store.get(store.path('counter')), 3);
+
+		historyManager.undo(store);
+		assert.strictEqual(store.get(store.path('counter')), 2);
+
+		executor({});
+		assert.isFalse(historyManager.canRedo(store));
+		assert.strictEqual(store.get(store.path('counter')), 3);
 	});
 
 	it('can undo', () => {
