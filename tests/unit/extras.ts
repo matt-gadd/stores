@@ -64,29 +64,4 @@ describe('extras', () => {
 		executor({});
 		assert.isFalse(historyManager.canRedo(store));
 	});
-
-	it('can undo', () => {
-		const historyManager = createHistoryManager();
-		const store = new Store();
-		const incrementCounterProcess = createProcess('increment', [incrementCounter], historyManager.collector());
-		const executor = incrementCounterProcess(store);
-		executor({});
-		assert.strictEqual(store.get(store.path('counter')), 1);
-		executor({});
-		assert.strictEqual(store.get(store.path('counter')), 2);
-		executor({});
-		assert.strictEqual(store.get(store.path('counter')), 3);
-		historyManager.undo(store);
-		assert.strictEqual(store.get(store.path('counter')), 2);
-	});
-
-	it('undo has no effect if there are no undo functions on the stack', () => {
-		const historyManager = createHistoryManager();
-		const store = new Store();
-		const incrementCounterProcess = createProcess('increment', [incrementCounter]);
-		const executor = incrementCounterProcess(store);
-		executor({});
-		historyManager.undo(store);
-		assert.strictEqual(store.get(store.path('counter')), 1);
-	});
 });
