@@ -5,8 +5,8 @@ import WeakMap from '@dojo/shim/WeakMap';
 
 export interface HistoryManager {
 	collector: ProcessCallbackDecorator;
-	serialize: (store: any) => PatchOperation[][];
-	deserialize: (store: any, history: any[][]) => void;
+	serialize: (store: any) => any;
+	deserialize: (store: any, data: any) => void;
 	undo: (store: any) => void;
 	redo: (store: any) => void;
 	canUndo: (store: any) => boolean;
@@ -75,7 +75,8 @@ export function createHistoryManager(): HistoryManager {
 				}
 			}
 		},
-		deserialize(store, history) {
+		deserialize(store, data) {
+			const { history, redo } = data;
 			history.forEach(({ id, operations }: any) => {
 				operations = (operations as any[]).map((operation) => {
 					operation.path = new Pointer(operation.path);
@@ -88,14 +89,24 @@ export function createHistoryManager(): HistoryManager {
 				}
 				processExecutor(id, [() => operations], store, callback, undefined)({});
 			});
+			const stacks = storeMap.get(store);
+			redo.forEach(({ id, operations }: any) => {
+				operations = (operations as any[]).map((operation) => {
+					operation.path = new Pointer(operation.path);
+					return operation;
+				});
+			});
+			stacks.redo = redo;
 		},
 		serialize(store) {
 			const stacks = storeMap.get(store);
 			if (stacks) {
-				const { history } = stacks;
-				return history;
+				return {
+					history: stacks.history,
+					redo: stacks.redo
+				};
 			}
-			return [];
+			return { history: [], redo: [] };
 		}
 	};
 }
