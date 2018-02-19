@@ -3,10 +3,15 @@ import { Pointer } from '../src/state/Pointer';
 import Store from '../src/Store';
 import WeakMap from '@dojo/shim/WeakMap';
 
+export interface HistoryData {
+	history: { id: string; operations: any[] }[];
+	redo: { id: string; operations: any[] }[];
+}
+
 export interface HistoryManager {
 	collector: ProcessCallbackDecorator;
-	serialize: (store: Store) => any;
-	deserialize: (store: Store, data: any) => void;
+	serialize: (store: Store) => HistoryData;
+	deserialize: (store: Store, data: HistoryData) => void;
 	undo: (store: Store) => void;
 	redo: (store: Store) => void;
 	canUndo: (store: Store) => boolean;
