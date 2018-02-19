@@ -1,11 +1,17 @@
 import { processExecutor, getProcess, ProcessError, ProcessResult, ProcessCallback } from './process';
+import { PatchOperation } from '../src/state/Patch';
 import { Pointer } from '../src/state/Pointer';
 import Store from '../src/Store';
 import WeakMap from '@dojo/shim/WeakMap';
 
+export interface HistoryOperation {
+	id: string;
+	operations: PatchOperation[];
+}
+
 export interface HistoryData {
-	history: { id: string; operations: any[] }[];
-	redo: { id: string; operations: any[] }[];
+	history: HistoryOperation[];
+	redo: HistoryOperation[];
 }
 
 export class HistoryManager {
@@ -77,8 +83,8 @@ export class HistoryManager {
 
 	public deserialize(store: Store, data: HistoryData) {
 		const { history, redo } = data;
-		history.forEach(({ id, operations }: any) => {
-			operations = (operations as any[]).map((operation) => {
+		history.forEach(({ id, operations }: HistoryOperation) => {
+			operations = operations.map((operation) => {
 				operation.path = new Pointer(operation.path);
 				return operation;
 			});
@@ -90,8 +96,8 @@ export class HistoryManager {
 			processExecutor(id, [() => operations], store, callback, undefined)({});
 		});
 		const stacks = this._storeMap.get(store);
-		redo.forEach(({ id, operations }: any) => {
-			operations = (operations as any[]).map((operation) => {
+		redo.forEach(({ id, operations }: HistoryOperation) => {
+			operations = operations.map((operation) => {
 				operation.path = new Pointer(operation.path);
 				return operation;
 			});
