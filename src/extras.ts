@@ -35,6 +35,7 @@ export class HistoryManager {
 		}
 		return false;
 	}
+
 	public canRedo(store: Store): boolean {
 		const stacks = this._storeMap.get(store);
 		if (stacks) {
