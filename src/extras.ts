@@ -1,5 +1,4 @@
 import { processExecutor, getProcess, ProcessError, ProcessResult, ProcessCallbackDecorator } from './process';
-import { PatchOperation } from '../src/state/Patch';
 import { Pointer } from '../src/state/Pointer';
 import WeakMap from '@dojo/shim/WeakMap';
 
