@@ -1,21 +1,22 @@
 import { processExecutor, getProcess, ProcessError, ProcessResult, ProcessCallbackDecorator } from './process';
 import { Pointer } from '../src/state/Pointer';
+import Store from '../src/Store';
 import WeakMap from '@dojo/shim/WeakMap';
 
 export interface HistoryManager {
 	collector: ProcessCallbackDecorator;
-	serialize: (store: any) => any;
-	deserialize: (store: any, data: any) => void;
-	undo: (store: any) => void;
-	redo: (store: any) => void;
-	canUndo: (store: any) => boolean;
-	canRedo: (store: any) => boolean;
+	serialize: (store: Store) => any;
+	deserialize: (store: Store, data: any) => void;
+	undo: (store: Store) => void;
+	redo: (store: Store) => void;
+	canUndo: (store: Store) => boolean;
+	canRedo: (store: Store) => boolean;
 }
 
 export function createHistoryManager(): HistoryManager {
 	const storeMap = new WeakMap();
 	return {
-		collector(callback?: any) {
+		collector(callback?) {
 			return (error: ProcessError | null, result: ProcessResult): void => {
 				const { operations, undoOperations, id, store } = result;
 				const { history, undo } = storeMap.get(store) || {
