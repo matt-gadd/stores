@@ -4,7 +4,7 @@ const { assert } = intern.getPlugin('chai');
 import { OperationType, PatchOperation } from './../../src/state/Patch';
 import { CommandRequest, createProcess } from './../../src/process';
 import { Pointer } from './../../src/state/Pointer';
-import { createHistoryManager } from './../../src/extras';
+import HistoryManager from './../../src/extras';
 import { Store } from './../../src/Store';
 
 function incrementCounter({ get, path }: CommandRequest<{ counter: number }>): PatchOperation[] {
@@ -14,7 +14,7 @@ function incrementCounter({ get, path }: CommandRequest<{ counter: number }>): P
 
 describe('extras', () => {
 	it('can serialize and deserialize history', () => {
-		const historyManager = createHistoryManager();
+		const historyManager = new HistoryManager();
 		const store = new Store();
 
 		const incrementCounterProcess = createProcess('increment', [incrementCounter], historyManager.collector());
