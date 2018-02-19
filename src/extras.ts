@@ -85,7 +85,7 @@ export class HistoryManager {
 		const { history, redo } = data;
 		history.forEach(({ id, operations }: HistoryOperation) => {
 			operations = operations.map((operation) => {
-				operation.path = new Pointer(operation.path);
+				operation.path = new Pointer(String(operation.path));
 				return operation;
 			});
 			let callback;
@@ -98,7 +98,7 @@ export class HistoryManager {
 		const stacks = this._storeMap.get(store);
 		redo.forEach(({ id, operations }: HistoryOperation) => {
 			operations = operations.map((operation) => {
-				operation.path = new Pointer(operation.path);
+				operation.path = new Pointer(String(operation.path));
 				return operation;
 			});
 		});
