@@ -48,6 +48,7 @@ describe('extras', () => {
 		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 1);
 		assert.strictEqual(historyManager.serialize(storeCopy).history.length, 1);
 		// can redo on new StoreCopy
+		historyManager.canRedo(storeCopy);
 		historyManager.redo(storeCopy);
 		assert.strictEqual(storeCopy.get(storeCopy.path('counter')), 2);
 		// undo on original store
