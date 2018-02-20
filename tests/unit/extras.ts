@@ -26,7 +26,7 @@ describe('extras', () => {
 		const incrementCounterProcess = createProcess(
 			'increment',
 			[incrementCounter],
-			historyManager.collector(collector)
+			historyManager.collector(collector())
 		);
 		const executor = incrementCounterProcess(store);
 		executor({});
