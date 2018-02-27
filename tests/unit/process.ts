@@ -310,4 +310,16 @@ describe('process', () => {
 		assert.strictEqual(results[3], 'callback one');
 		assert.deepEqual(store.get(store.path('logs')), [['/foo', '/bar'], ['/foo', '/bar']]);
 	});
+
+	it('process can be undone using the undo function provided via the callback', () => {
+		const process = createProcess('foo', [testCommandFactory('foo')], (error, result) => {
+			let foo = store.get(result.store.path('foo'));
+			assert.strictEqual(foo, 'foo');
+			store.apply(result.undoOperations);
+			foo = store.get(result.store.path('foo'));
+			assert.isUndefined(foo);
+		});
+		const processExecutor = process(store);
+		processExecutor({});
+	});
 });
