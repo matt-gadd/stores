@@ -69,13 +69,13 @@ export interface ProcessResultExecutor<T = any> {
  */
 export interface ProcessResult<T = any, P extends object = DefaultPayload> extends State<T> {
 	executor: ProcessResultExecutor<T>;
-	store: Store<any>;
+	store: Store<T>;
 	operations: PatchOperation<T>[];
 	undoOperations: PatchOperation<T>[];
 	apply: (operations: PatchOperation<T>[], invalidate?: boolean) => PatchOperation<T>[];
 	payload: P;
+	id: string;
 	error?: ProcessError<T> | null;
-	id?: string;
 }
 
 /**
