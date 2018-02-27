@@ -96,6 +96,12 @@ describe('state/Pointer', () => {
 		assert.deepEqual(target.segment, 'qux');
 	});
 
+	it('converts to a string path with toString', () => {
+		const pointer = new Pointer('foo/bar/qux');
+		const stringified = pointer.toString();
+		assert.strictEqual(stringified, '"/foo/bar/qux"');
+	});
+
 	it('converts to a string path with toJSON', () => {
 		const pointer = new Pointer('foo/bar/qux');
 		const stringified = JSON.stringify(pointer);

@@ -82,6 +82,10 @@ export class Pointer<T = any, U = any> {
 	}
 
 	toJSON(): string {
+		return this.toString();
+	}
+
+	toString(): string {
 		return this.path;
 	}
 }
