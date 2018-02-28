@@ -1,11 +1,11 @@
 const { describe, it } = intern.getInterface('bdd');
 const { assert } = intern.getPlugin('chai');
 
-import { OperationType, PatchOperation } from './../../src/state/Patch';
-import { CommandRequest, createProcess } from './../../src/process';
-import { Pointer } from './../../src/state/Pointer';
-import HistoryManager from './../../src/extras';
-import { Store } from './../../src/Store';
+import { OperationType, PatchOperation } from './../../../src/state/Patch';
+import { CommandRequest, createProcess } from './../../../src/process';
+import { Pointer } from './../../../src/state/Pointer';
+import HistoryManager from './../../../src/middleware/HistoryManager';
+import { Store } from './../../../src/Store';
 
 function incrementCounter({ get, path }: CommandRequest<{ counter: number }>): PatchOperation[] {
 	let counter = get(path('counter')) || 0;
